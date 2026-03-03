@@ -27,6 +27,11 @@ export default function LandingPage() {
       router.push('/dashboard');
     }
   }, [user, loading, router]);
+
+  if (loading) {
+    return <div />; // Or a spinner
+  }
+
   const features = [
     {
       icon: Sparkles,
@@ -136,19 +141,7 @@ export default function LandingPage() {
 
   // Show loading state while checking authentication
   if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          >
-            <Leaf className="w-12 h-12 text-emerald-600" />
-          </motion.div>
-          <p className="text-stone-600 font-medium">Loading...</p>
-        </div>
-      </div>
-    );
+    return <div />; // Or a spinner
   }
 
   return (
