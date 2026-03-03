@@ -29,7 +29,7 @@ export default function LandingPage() {
     }
   }, [user, loading, router]);
 
-  if (loading) {
+  if (loading || user) {
     return <LeafLoader />;
   }
 
