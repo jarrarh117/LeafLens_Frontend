@@ -208,6 +208,10 @@ function getAnalysisDetails(plant: string, condition: string) {
 // ═════════════════════════════════════════════════════════════════════════════
 // POST /api/predict
 //
+// INTERNAL ENDPOINT - For web dashboard use only (authenticated via Firebase)
+// 
+// For external API access, use /api/v1/predict with API key authentication.
+//
 // Receives a base64 image from the frontend, forwards it to the Python
 // FastAPI backend (EfficientNetV2S + CBAM model), then enriches the
 // response with disease descriptions, treatment recommendations, and
@@ -219,6 +223,26 @@ function getAnalysisDetails(plant: string, condition: string) {
 
 export async function POST(request: NextRequest) {
   try {
+    // ── Check for Firebase Auth (for web dashboard) ──────────────────────
+    // This endpoint is ONLY for the web dashboard, not for external API access
+    // External API access should use /api/v1/predict with API keys
+    
+    const authHeader = request.headers.get("Authorization");
+    const isWebDashboard = authHeader && authHeader.startsWith("Bearer ") && !authHeader.includes("llai_");
+    
+    // If this looks like an API key attempt, redirect to proper endpoint
+    if (authHeader && authHeader.includes("llai_")) {
+      return NextResponse.json(
+        {
+          error: "Invalid endpoint for API key authentication",
+          message: "Please use the authenticated endpoint for API access",
+          correctEndpoint: "https://leaflens-six.vercel.app/api/v1/predict",
+          documentation: "https://leaflens-six.vercel.app/api-docs"
+        },
+        { status: 401 }
+      );
+    }
+    
     // ── Rate limiting ────────────────────────────────────────────────────
     const identifier = getClientIdentifier(request);
     const rateLimitResult = predictRateLimit(identifier);
@@ -431,4 +455,22 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// GET /api/predict
+// Returns information about API access
+// ═════════════════════════════════════════════════════════════════════════════
+export async function GET(request: NextRequest) {
+  return NextResponse.json({
+    message: "This endpoint is for internal web dashboard use only",
+    externalApiAccess: {
+      endpoint: "https://leaflens-six.vercel.app/api/v1/predict",
+      method: "POST",
+      authentication: "API key required (Bearer token)",
+      documentation: "https://leaflens-six.vercel.app/api-docs",
+      getApiKey: "https://leaflens-six.vercel.app/api-keys"
+    },
+    note: "Sign up and create an API key to access the LeafLens API programmatically"
+  });
 }
