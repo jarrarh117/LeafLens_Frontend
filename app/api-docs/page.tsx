@@ -132,10 +132,10 @@ export default function APIDocsPage() {
             Base URL
           </h2>
           <div className="bg-stone-100 dark:bg-stone-800 rounded-xl p-4 font-mono text-sm text-stone-800 dark:text-stone-200">
-            https://leaflens-six.vercel.app/api/predict
+            https://leaflens-six.vercel.app/api/v1/predict
           </div>
           <p className="text-stone-500 dark:text-stone-400 text-sm mt-2">
-            This is the production endpoint. All images are validated using Google Gemini AI to ensure they contain a plant before disease analysis. Non-plant images are rejected with an error response.
+            This is the authenticated API endpoint. Requires a valid API key in the Authorization header. All images are validated using Google Gemini AI to ensure they contain a plant before disease analysis. Non-plant images are rejected with an error response.
           </p>
         </motion.section>
 
