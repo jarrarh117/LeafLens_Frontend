@@ -132,10 +132,10 @@ export default function APIDocsPage() {
             Base URL
           </h2>
           <div className="bg-stone-100 dark:bg-stone-800 rounded-xl p-4 font-mono text-sm text-stone-800 dark:text-stone-200">
-            https://your-domain.com/api/v1
+            https://leaflens-six.vercel.app/api/predict
           </div>
           <p className="text-stone-500 dark:text-stone-400 text-sm mt-2">
-            Replace with your actual domain when deployed.
+            This is the production endpoint. All images are validated using Google Gemini AI to ensure they contain a plant before disease analysis. Non-plant images are rejected with an error response.
           </p>
         </motion.section>
 
@@ -210,10 +210,10 @@ export default function APIDocsPage() {
           <h3 className="font-semibold text-stone-900 dark:text-white mb-3">Example Request (cURL)</h3>
           <CodeBlock 
             section="curl"
-            code={`curl -X POST https://your-domain.com/api/v1/predict \\
-  -H "Authorization: Bearer llai_xxxxxxxxxxxxxxxxxxxx" \\
-  -H "Content-Type: application/json" \\
-  -d '{"image": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."}'`}
+              code={`curl -X POST https://leaflens-six.vercel.app/api/predict \
+        -H "Authorization: Bearer llai_xxxxxxxxxxxxxxxxxxxx" \
+        -H "Content-Type: application/json" \
+        -d '{"image": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."}'`}
           />
 
           {/* Example Request - JavaScript */}
@@ -275,7 +275,6 @@ response = requests.post(
 )
 
 result = response.json()
-print(f"Disease: {result['disease']}")
 print(f"Confidence: {result['confidence']}")`}
           />
 
@@ -306,6 +305,7 @@ print(f"Confidence: {result['confidence']}")`}
 
         {/* Error Responses */}
         <motion.section 
+            code={`// Convert image to base64
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
@@ -382,7 +382,6 @@ print(f"Confidence: {result['confidence']}")`}
                   <td className="py-2">Unlimited</td>
                 </tr>
               </tbody>
-            </table>
           </div>
         </motion.section>
 
@@ -402,6 +401,7 @@ print(f"Confidence: {result['confidence']}")`}
             className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-semibold transition-colors"
           >
             Contact Support
+                code={`import requests
           </a>
         </motion.section>
       </main>
