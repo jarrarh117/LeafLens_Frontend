@@ -83,7 +83,7 @@ const Header = ({ user, onLogout }: { user: any, onLogout: () => void }) => (
         </p>
       </div>
     </motion.div>
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-2 md:gap-4">
       <motion.div 
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -104,9 +104,9 @@ const Header = ({ user, onLogout }: { user: any, onLogout: () => void }) => (
           transition={{ duration: 0.5, delay: 0.25 }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="bg-gradient-to-r from-emerald-600 to-green-500 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:from-emerald-700 hover:to-green-600 transition-all shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 flex items-center gap-2"
+          className="bg-gradient-to-r from-emerald-600 to-green-500 text-white px-3 py-2.5 md:px-5 rounded-full text-sm font-semibold hover:from-emerald-700 hover:to-green-600 transition-all shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 flex items-center gap-2"
         >
-          <Key size={16} />
+          <Key size={18} />
           <span className="hidden md:inline">Get API Key</span>
         </motion.button>
       </Link>
@@ -117,9 +117,9 @@ const Header = ({ user, onLogout }: { user: any, onLogout: () => void }) => (
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={onLogout}
-        className="bg-stone-900 dark:bg-stone-700 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-stone-800 dark:hover:bg-stone-600 transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+        className="bg-stone-900 dark:bg-stone-700 text-white px-3 py-2.5 md:px-6 rounded-full text-sm font-semibold hover:bg-stone-800 dark:hover:bg-stone-600 transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
       >
-        <LogOut size={16} />
+        <LogOut size={18} />
         <span className="hidden md:inline">Logout</span>
       </motion.button>
     </div>
