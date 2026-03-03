@@ -6,6 +6,7 @@ import { validateBase64Image, logSecurityEvent } from "@/lib/security";
 
 // ── Configuration ────────────────────────────────────────────────────────────
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 // ── Rate Limits per Plan ─────────────────────────────────────────────────────
 const PLAN_LIMITS = {
@@ -16,6 +17,138 @@ const PLAN_LIMITS = {
 
 // In-memory rate limiting (per API key)
 const apiKeyUsage = new Map<string, { minute: number; day: number; minuteReset: number; dayReset: number }>();
+
+// ── Helper: Validate image contains a plant leaf using Gemini ────────────────
+async function validatePlantImage(base64Image: string): Promise<{
+  isPlant: boolean;
+  confidence: number;
+  reason?: string;
+  validationSkipped?: boolean;
+}> {
+  if (!GEMINI_API_KEY) {
+    console.warn("⚠️  Gemini API key not configured - skipping plant validation");
+    return { isPlant: true, confidence: 1.0, validationSkipped: true };
+  }
+
+  try {
+    const imageData = base64Image.includes(",") 
+      ? base64Image.split(",")[1] 
+      : base64Image;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `You are an expert botanist and image classifier. Analyze this image carefully and determine if it contains a plant leaf or plant foliage suitable for disease detection.
+
+Respond with a JSON object in this EXACT format:
+{
+  "isPlant": true/false,
+  "confidence": 0.0-1.0,
+  "reason": "brief explanation"
+}
+
+Classification Rules:
+✅ ACCEPT (isPlant: true) if image shows:
+- Plant leaves (any species)
+- Plant foliage or stems with leaves
+- Crops or agricultural plants
+- Tree leaves or branches with leaves
+- Indoor or outdoor plants
+- Even if leaves appear damaged or diseased
+
+❌ REJECT (isPlant: false) if image shows:
+- Animals, insects, or people
+- Buildings, vehicles, or objects
+- Food items (cooked/processed)
+- Landscapes without clear plant focus
+- Abstract art or patterns
+- Text, documents, or screenshots
+- Flowers only (without leaves)
+- Fruits only (without leaves)
+- Blurry or unclear images
+
+Confidence Guidelines:
+- 0.9-1.0: Very clear plant leaves visible
+- 0.7-0.9: Likely plant leaves but some uncertainty
+- 0.5-0.7: Possible plant but unclear
+- 0.0-0.5: Probably not a plant
+
+Be strict but fair. The goal is to filter out obvious non-plant images while allowing genuine plant disease detection.`,
+                },
+                {
+                  inline_data: {
+                    mime_type: "image/jpeg",
+                    data: imageData,
+                  },
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            response_mime_type: "application/json",
+            temperature: 0.2,
+            maxOutputTokens: 200,
+          },
+        }),
+        signal: AbortSignal.timeout(10000),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "Unknown error");
+      console.error("❌ Gemini API error:", response.status, errorText);
+      logSecurityEvent(
+        "gemini_api_error",
+        { status: response.status, error: errorText },
+        "medium"
+      );
+      return { isPlant: true, confidence: 1.0, validationSkipped: true };
+    }
+
+    const data = await response.json();
+    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!resultText) {
+      console.error("❌ No response from Gemini");
+      return { isPlant: true, confidence: 1.0, validationSkipped: true };
+    }
+
+    const result = JSON.parse(resultText);
+    
+    if (typeof result.isPlant !== "boolean" || typeof result.confidence !== "number") {
+      console.error("❌ Invalid Gemini response format:", result);
+      return { isPlant: true, confidence: 1.0, validationSkipped: true };
+    }
+
+    console.log("✅ Plant validation:", {
+      isPlant: result.isPlant,
+      confidence: result.confidence,
+      reason: result.reason
+    });
+
+    return {
+      isPlant: result.isPlant === true,
+      confidence: Math.max(0, Math.min(1, result.confidence)),
+      reason: result.reason || "No reason provided",
+      validationSkipped: false,
+    };
+  } catch (error: any) {
+    console.error("❌ Plant validation error:", error.message);
+    logSecurityEvent(
+      "plant_validation_error",
+      { error: error.message },
+      "low"
+    );
+    return { isPlant: true, confidence: 1.0, validationSkipped: true };
+  }
+}
 
 // ── Helper: get disease description & treatment for a condition ──────────────
 function getAnalysisDetails(plant: string, condition: string) {
@@ -236,6 +369,36 @@ export async function POST(request: NextRequest) {
         { error: imageValidation.error },
         { status: 400 }
       );
+    }
+
+    // ── Validate image contains a plant using Gemini ─────────────────────
+    const plantValidation = await validatePlantImage(image);
+    
+    if (!plantValidation.validationSkipped && !plantValidation.isPlant) {
+      return NextResponse.json(
+        { 
+          error: "Invalid image type",
+          message: "This doesn't appear to be a plant leaf image. Please upload a clear photo of a plant leaf for accurate disease detection.",
+          details: plantValidation.reason,
+          suggestions: [
+            "Ensure the image shows plant leaves clearly",
+            "Use good lighting and focus on the affected area",
+            "Avoid images of people, animals, or non-plant objects",
+            "Make sure leaves fill most of the frame"
+          ],
+          isPlant: false,
+          confidence: plantValidation.confidence
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!plantValidation.validationSkipped && plantValidation.confidence < 0.7) {
+      console.warn("⚠️  Low confidence plant detection:", {
+        confidence: plantValidation.confidence,
+        reason: plantValidation.reason,
+        proceeding: true
+      });
     }
 
     // ── Forward to Python backend ────────────────────────────────────────
