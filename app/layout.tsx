@@ -10,6 +10,10 @@ export const metadata: Metadata = {
   description: "Advanced AI-powered plant disease detection and diagnosis system. Upload a photo of your plant leaf to get instant disease identification and treatment recommendations.",
   keywords: ["plant disease", "AI detection", "agriculture", "crop health", "plant diagnosis"],
   authors: [{ name: "LeafLens Team" }],
+  icons: {
+    icon: "/images/LeafLens.png",
+    apple: "/images/LeafLens.png",
+  },
   openGraph: {
     title: "LeafLens - AI Plant Disease Detection",
     description: "AI-powered plant disease detection system",
