@@ -1049,7 +1049,7 @@ export default function DashboardPage() {
               </motion.div>
             </Link>
             <motion.button
-              onClick={onLogout}
+              onClick={handleLogout}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="bg-stone-900 dark:bg-stone-800 text-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all flex flex-col items-center justify-center gap-3 text-center"
@@ -1063,7 +1063,6 @@ export default function DashboardPage() {
               </div>
             </motion.button>
           </div>
-        </motion.section>
         </motion.section>
 
         {/* Camera Modal */}
