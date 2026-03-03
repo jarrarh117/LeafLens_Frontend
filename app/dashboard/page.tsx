@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { logOut } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import LeafLoader from "@/components/LeafLoader";
 
 // Utility for tailwind classes
 function cn(...classes: (string | undefined | null | false)[]) {
@@ -166,7 +167,7 @@ export default function DashboardPage() {
   }, [user, loading, router]);
 
   if (loading) {
-    return <div />; // Or a spinner
+    return <LeafLoader />;
   }
 
   // Fetch user stats from Firestore
