@@ -141,10 +141,6 @@ function checkRateLimit(apiKey: string, plan: string): { allowed: boolean; retry
 // ── Helper: Update API Key Usage Stats ───────────────────────────────────────
 async function updateApiKeyUsage(keyDocId: string) {
   try {
-    const keyRef = collection(db, "apiKeys");
-    const docRef = keyRef.doc ? (keyRef as any).doc(keyDocId) : null;
-    
-    // Use updateDoc with the document reference
     const { doc } = await import("firebase/firestore");
     const keyDocRef = doc(db, "apiKeys", keyDocId);
     
