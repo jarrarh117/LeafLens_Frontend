@@ -31,16 +31,15 @@ let storage: FirebaseStorage;
 let auth: Auth;
 let analytics: Analytics | undefined;
 
-if (typeof window !== 'undefined') {
-  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-  db = getFirestore(app);
-  storage = getStorage(app);
-  auth = getAuth(app);
-  
-  // Analytics only works in browser
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-    analytics = getAnalytics(app);
-  }
+// Initialize Firebase app (works on both server and client)
+app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+db = getFirestore(app);
+storage = getStorage(app);
+auth = getAuth(app);
+
+// Analytics only works in browser
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+  analytics = getAnalytics(app);
 }
 
 export { app, db, storage, auth, analytics };
