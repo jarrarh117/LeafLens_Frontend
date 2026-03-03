@@ -328,7 +328,7 @@ export default function ApiKeysPage() {
             </div>
             <button
               onClick={() => setShowNewKeyModal(true)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-lg"
+              className="hidden md:flex bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-semibold items-center gap-2 transition-all shadow-lg"
             >
               <Plus size={20} />
               Create New Key
