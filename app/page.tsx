@@ -150,7 +150,7 @@ export default function LandingPage() {
               <a href="#testimonials" className="text-sm font-medium text-stone-600 hover:text-emerald-600 transition-colors">Testimonials</a>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-4">
               <Link
                 href="/login"
                 className="text-sm font-semibold text-stone-600 hover:text-emerald-600 transition-colors"
