@@ -281,8 +281,10 @@ async function updateApiKeyUsage(keyDocId: string) {
       usageCount: increment(1),
       lastUsed: Timestamp.now(),
     });
+    
+    console.log(`✅ Updated usage for API key: ${keyDocId}`);
   } catch (error) {
-    console.error("Failed to update API key usage:", error);
+    console.error("❌ Failed to update API key usage:", error);
     // Don't fail the request if usage tracking fails
   }
 }
@@ -435,7 +437,10 @@ export async function POST(request: NextRequest) {
     const backendResult = await backendResponse.json();
 
     // ── Update API key usage stats (async, don't wait) ───────────────────
-    updateApiKeyUsage(validation.keyDocId!);
+    console.log(`📊 Updating usage for API key doc: ${validation.keyDocId}`);
+    updateApiKeyUsage(validation.keyDocId!).catch(err => {
+      console.error("Usage update failed:", err);
+    });
 
     // ── Enrich with disease info ─────────────────────────────────────────
     const topPrediction = backendResult.predictions[0];
