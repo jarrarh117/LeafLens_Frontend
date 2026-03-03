@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Key, Copy, Trash2, Plus, Eye, EyeOff, AlertCircle, CheckCircle2, ArrowLeft, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,7 +35,7 @@ export default function ApiKeysPage() {
   }, [user, loading, router]);
 
   // Load API keys from Firestore
-  const loadApiKeys = async () => {
+  const loadApiKeys = useCallback(async () => {
       if (!user) return;
       
       try {
@@ -106,13 +106,13 @@ export default function ApiKeysPage() {
         setLoadingKeys(false);
         setRefreshing(false);
       }
-    };
+    }, [user]);
 
   useEffect(() => {
     if (user) {
       loadApiKeys();
     }
-  }, [user]);
+  }, [user, loadApiKeys]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
