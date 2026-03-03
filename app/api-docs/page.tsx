@@ -210,10 +210,10 @@ export default function APIDocsPage() {
           <h3 className="font-semibold text-stone-900 dark:text-white mb-3">Example Request (cURL)</h3>
           <CodeBlock 
             section="curl"
-              code={`curl -X POST https://leaflens-six.vercel.app/api/predict \
-        -H "Authorization: Bearer llai_xxxxxxxxxxxxxxxxxxxx" \
-        -H "Content-Type: application/json" \
-        -d '{"image": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."}'`}
+              code={`curl -X POST https://leaflens-six.vercel.app/api/v1/predict \\
+  -H "Authorization: Bearer llai_xxxxxxxxxxxxxxxxxxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{"image": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."}'`}
           />
 
           {/* Example Request - JavaScript */}
@@ -229,28 +229,32 @@ const fileToBase64 = (file) => new Promise((resolve, reject) => {
 });
 
 // Make API request
-const analyzeImage = async (imageFile) => {
+const analyzeImage = async (imageFile, apiKey) => {
   const base64Image = await fileToBase64(imageFile);
   
-  const response = await fetch('https://your-domain.com/api/v1/predict', {
+  const response = await fetch('https://leaflens-six.vercel.app/api/v1/predict', {
     method: 'POST',
     headers: {
-      'Authorization': 'Bearer llai_xxxxxxxxxxxxxxxxxxxx',
+      'Authorization': \`Bearer \${apiKey}\`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({ image: base64Image })
   });
   
   if (!response.ok) {
-    throw new Error('API request failed');
+    const error = await response.json();
+    throw new Error(error.error || 'API request failed');
   }
   
   return await response.json();
 };
 
 // Usage
-const result = await analyzeImage(myImageFile);
-console.log(result.disease, result.confidence);`}
+const apiKey = 'llai_xxxxxxxxxxxxxxxxxxxx';
+const result = await analyzeImage(myImageFile, apiKey);
+console.log(\`Disease: \${result.disease}\`);
+console.log(\`Confidence: \${result.confidence}\`);
+console.log(\`Severity: \${result.severity}\`);`}
           />
 
           {/* Example Request - Python */}
@@ -260,22 +264,36 @@ console.log(result.disease, result.confidence);`}
             code={`import requests
 import base64
 
+# Your API key
+API_KEY = "llai_xxxxxxxxxxxxxxxxxxxx"
+
 # Read and encode image
 with open("plant_image.jpg", "rb") as image_file:
     base64_image = base64.b64encode(image_file.read()).decode('utf-8')
 
 # Make API request
 response = requests.post(
-    "https://your-domain.com/api/v1/predict",
+    "https://leaflens-six.vercel.app/api/v1/predict",
     headers={
-        "Authorization": "Bearer llai_xxxxxxxxxxxxxxxxxxxx",
+        "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json"
     },
     json={"image": f"data:image/jpeg;base64,{base64_image}"}
 )
 
-result = response.json()
-print(f"Confidence: {result['confidence']}")`}
+# Check response
+if response.status_code == 200:
+    result = response.json()
+    print(f"Disease: {result['disease']}")
+    print(f"Plant: {result['plant']}")
+    print(f"Confidence: {result['confidence']}")
+    print(f"Severity: {result['severity']}")
+    print(f"\\nRecommendations:")
+    for i, rec in enumerate(result['recommendations'], 1):
+        print(f"{i}. {rec}")
+else:
+    error = response.json()
+    print(f"Error: {error.get('error', 'Unknown error')}")`}
           />
 
           {/* Response */}
