@@ -17,6 +17,7 @@ import {
   Globe,
   Star
 } from "lucide-react";
+import LeafLoader from "@/components/LeafLoader";
 
 export default function LandingPage() {
   const { user, loading } = useAuth();
@@ -29,7 +30,7 @@ export default function LandingPage() {
   }, [user, loading, router]);
 
   if (loading) {
-    return <div />; // Or a spinner
+    return <LeafLoader />;
   }
 
   const features = [
@@ -141,7 +142,7 @@ export default function LandingPage() {
 
   // Show loading state while checking authentication
   if (loading) {
-    return <div />; // Or a spinner
+    return <LeafLoader />; // Or a spinner
   }
 
   return (
