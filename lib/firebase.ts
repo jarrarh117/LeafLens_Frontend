@@ -1,7 +1,7 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
-import { getAuth, Auth } from 'firebase/auth';
+import { getAuth, Auth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getAnalytics, Analytics } from 'firebase/analytics';
 
 const firebaseConfig = {
@@ -36,6 +36,14 @@ app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 db = getFirestore(app);
 storage = getStorage(app);
 auth = getAuth(app);
+
+// Set auth persistence to LOCAL (persists even after browser closes)
+// This runs only on client side
+if (typeof window !== 'undefined') {
+  setPersistence(auth, browserLocalPersistence).catch((error) => {
+    console.error('Error setting auth persistence:', error);
+  });
+}
 
 // Analytics only works in browser
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
