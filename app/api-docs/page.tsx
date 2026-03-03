@@ -305,7 +305,6 @@ print(f"Confidence: {result['confidence']}")`}
 
         {/* Error Responses */}
         <motion.section 
-            code={`// Convert image to base64
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
@@ -382,6 +381,7 @@ print(f"Confidence: {result['confidence']}")`}
                   <td className="py-2">Unlimited</td>
                 </tr>
               </tbody>
+            </table>
           </div>
         </motion.section>
 
@@ -401,7 +401,6 @@ print(f"Confidence: {result['confidence']}")`}
             className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-semibold transition-colors"
           >
             Contact Support
-                code={`import requests
           </a>
         </motion.section>
       </main>
