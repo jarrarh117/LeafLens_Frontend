@@ -23,8 +23,9 @@ async function validatePlantImage(base64Image: string): Promise<{
   validationSkipped?: boolean;
 }> {
   if (!GEMINI_API_KEY) {
-    // If Gemini API key is not configured, skip validation
-    console.warn("⚠️  Gemini API key not configured - skipping plant validation");
+    // If Gemini API key is not configured, log warning but allow request
+    console.warn("⚠️  Gemini API key not configured - plant validation disabled");
+    console.warn("⚠️  Set GEMINI_API_KEY in .env.local to enable smart validation");
     return { isPlant: true, confidence: 1.0, validationSkipped: true };
   }
 
@@ -33,6 +34,8 @@ async function validatePlantImage(base64Image: string): Promise<{
     const imageData = base64Image.includes(",") 
       ? base64Image.split(",")[1] 
       : base64Image;
+
+    console.log("🔍 Validating image with Gemini AI...");
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
@@ -92,11 +95,11 @@ Be strict but fair. The goal is to filter out obvious non-plant images while all
           ],
           generationConfig: {
             response_mime_type: "application/json",
-            temperature: 0.2, // Slightly higher for better reasoning
+            temperature: 0.2,
             maxOutputTokens: 200,
           },
         }),
-        signal: AbortSignal.timeout(10000), // 10 second timeout
+        signal: AbortSignal.timeout(15000), // 15 second timeout
       }
     );
 
@@ -104,13 +107,14 @@ Be strict but fair. The goal is to filter out obvious non-plant images while all
       const errorText = await response.text().catch(() => "Unknown error");
       console.error("❌ Gemini API error:", response.status, errorText);
       
-      // Log for monitoring but fail open (allow request)
+      // Log for monitoring
       logSecurityEvent(
         "gemini_api_error",
         { status: response.status, error: errorText },
         "medium"
       );
       
+      // If API fails, allow request but log it
       return { isPlant: true, confidence: 1.0, validationSkipped: true };
     }
 
@@ -122,7 +126,14 @@ Be strict but fair. The goal is to filter out obvious non-plant images while all
       return { isPlant: true, confidence: 1.0, validationSkipped: true };
     }
 
-    const result = JSON.parse(resultText);
+    // Parse JSON response
+    let result;
+    try {
+      result = JSON.parse(resultText);
+    } catch (parseError) {
+      console.error("❌ Failed to parse Gemini response:", resultText);
+      return { isPlant: true, confidence: 1.0, validationSkipped: true };
+    }
     
     // Validate response structure
     if (typeof result.isPlant !== "boolean" || typeof result.confidence !== "number") {
@@ -130,7 +141,7 @@ Be strict but fair. The goal is to filter out obvious non-plant images while all
       return { isPlant: true, confidence: 1.0, validationSkipped: true };
     }
 
-    console.log("✅ Plant validation:", {
+    console.log("✅ Plant validation result:", {
       isPlant: result.isPlant,
       confidence: result.confidence,
       reason: result.reason
@@ -267,6 +278,11 @@ export async function POST(request: NextRequest) {
     // ── Validate image contains a plant using Gemini ─────────────────────
     const plantValidation = await validatePlantImage(image);
     
+    // Log validation result for debugging
+    if (plantValidation.validationSkipped) {
+      console.log("⚠️  Plant validation was skipped - check GEMINI_API_KEY configuration");
+    }
+    
     // Only reject if validation was successful AND image is not a plant
     if (!plantValidation.validationSkipped && !plantValidation.isPlant) {
       logSecurityEvent(
@@ -282,17 +298,18 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json(
         { 
-          error: "Invalid image type",
-          message: "This doesn't appear to be a plant leaf image. Please upload a clear photo of a plant leaf for accurate disease detection.",
-          details: plantValidation.reason,
+          error: "This doesn't appear to be a plant leaf image",
+          message: `Our AI detected: ${plantValidation.reason || "This image doesn't contain plant leaves"}`,
+          details: "Please upload a clear photo of plant leaves for accurate disease detection.",
           suggestions: [
-            "Ensure the image shows plant leaves clearly",
-            "Use good lighting and focus on the affected area",
-            "Avoid images of people, animals, or non-plant objects",
-            "Make sure leaves fill most of the frame"
+            "📸 Take a close-up photo of the plant leaves",
+            "💡 Ensure good lighting and focus",
+            "🌿 Make sure leaves fill most of the frame",
+            "❌ Avoid images of people, animals, or objects"
           ],
           isPlant: false,
-          confidence: plantValidation.confidence
+          confidence: plantValidation.confidence,
+          validationEnabled: true
         },
         { status: 400 }
       );
