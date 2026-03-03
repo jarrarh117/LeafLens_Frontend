@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Key, Copy, Trash2, Plus, Eye, EyeOff, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Key, Copy, Trash2, Plus, Eye, EyeOff, AlertCircle, CheckCircle2, ArrowLeft, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -26,6 +26,7 @@ export default function ApiKeysPage() {
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [loadingKeys, setLoadingKeys] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -34,8 +35,7 @@ export default function ApiKeysPage() {
   }, [user, loading, router]);
 
   // Load API keys from Firestore
-  useEffect(() => {
-    const loadApiKeys = async () => {
+  const loadApiKeys = async () => {
       if (!user) return;
       
       try {
@@ -104,13 +104,20 @@ export default function ApiKeysPage() {
         }
       } finally {
         setLoadingKeys(false);
+        setRefreshing(false);
       }
     };
 
+  useEffect(() => {
     if (user) {
       loadApiKeys();
     }
   }, [user]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadApiKeys();
+  };
 
   const generateApiKey = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -326,13 +333,23 @@ export default function ApiKeysPage() {
                 <p className="text-sm text-stone-600 dark:text-stone-400">Manage your API keys for programmatic access</p>
               </div>
             </div>
-            <button
-              onClick={() => setShowNewKeyModal(true)}
-              className="hidden md:flex bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-semibold items-center gap-2 transition-all shadow-lg"
-            >
-              <Plus size={20} />
-              Create New Key
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="hidden md:flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all disabled:opacity-50"
+              >
+                <RefreshCw size={20} className={refreshing ? 'animate-spin' : ''} />
+                Refresh
+              </button>
+              <button
+                onClick={() => setShowNewKeyModal(true)}
+                className="hidden md:flex bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-xl font-semibold items-center gap-2 transition-all shadow-lg"
+              >
+                <Plus size={20} />
+                Create New Key
+              </button>
+            </div>
           </div>
         </div>
       </header>
