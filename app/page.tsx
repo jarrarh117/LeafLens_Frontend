@@ -197,7 +197,7 @@ export default function LandingPage() {
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link
-                  href="/dashboard"
+                  href="/signup"
                   className="border-2 border-emerald-500 text-emerald-600 px-8 py-4 rounded-xl font-semibold hover:bg-emerald-50 hover:border-emerald-600 transition-all duration-300 text-center"
                 >
                   Try It Now
