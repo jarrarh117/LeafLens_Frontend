@@ -95,9 +95,26 @@ LeafLens uses Google's Gemini AI to validate that uploaded images actually conta
 1. User uploads an image
 2. Gemini AI analyzes if the image contains plant leaves
 3. If yes → proceeds to disease detection model
-4. If no → returns helpful error message
+4. If no → returns helpful error message with suggestions
 
-**To enable:**
+**Setup (REQUIRED):**
+1. Get a free Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Add it to your `.env.local` file: `GEMINI_API_KEY=your_key_here`
+3. Restart your development server
+
+**Without the API key:**
+- ⚠️ Validation is disabled
+- ❌ Non-plant images will be processed by the model
+- ❌ Users may get incorrect disease classifications
+
+**With the API key:**
+- ✅ Only plant leaf images are accepted
+- ✅ Non-plant images are rejected with helpful feedback
+- ✅ Better user experience and accuracy
+
+**Testing:**
+- Upload a plant leaf → Should work ✅
+- Upload a person/animal/object → Should be rejected ❌
 1. Get a free Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
 2. Add to `.env.local`: `GEMINI_API_KEY=your_key_here`
 
