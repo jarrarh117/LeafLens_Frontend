@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, updateDoc, increment, Timestamp } from "firebase/firestore";
 import { PLANT_CLASSES, parseClassName, getDiseaseInfo, getSeverity } from "@/lib/plantClasses";
 import { validateBase64Image, logSecurityEvent } from "@/lib/security";
 
@@ -201,6 +199,14 @@ async function validateApiKey(apiKey: string): Promise<{
   }
 
   try {
+    // Dynamically import Firebase to avoid build-time initialization
+    const { db } = await import("@/lib/firebase");
+    const { collection, query, where, getDocs } = await import("firebase/firestore");
+    
+    if (!db) {
+      return { valid: false, error: "Database not available" };
+    }
+    
     // Query Firestore for this API key
     const apiKeysRef = collection(db, "apiKeys");
     const q = query(apiKeysRef, where("key", "==", apiKey));
@@ -274,7 +280,14 @@ function checkRateLimit(apiKey: string, plan: string): { allowed: boolean; retry
 // ── Helper: Update API Key Usage Stats ───────────────────────────────────────
 async function updateApiKeyUsage(keyDocId: string) {
   try {
-    const { doc } = await import("firebase/firestore");
+    const { db } = await import("@/lib/firebase");
+    const { doc, updateDoc, increment, Timestamp } = await import("firebase/firestore");
+    
+    if (!db) {
+      console.error("❌ Database not available for usage tracking");
+      return;
+    }
+    
     const keyDocRef = doc(db, "apiKeys", keyDocId);
     
     await updateDoc(keyDocRef, {
