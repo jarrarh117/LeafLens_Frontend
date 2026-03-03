@@ -53,12 +53,11 @@ export default function UploadSection({ onDetectionComplete }: UploadSectionProp
     maxSize: 5242880, // 5MB
   });
 
-  const handleAnalyze = async () => {
+  const startAnalysis = async () => {
     if (!selectedImage) return;
-
     setIsAnalyzing(true);
     setError(null);
-
+    
     try {
       const response = await fetch("/api/predict", {
         method: "POST",
@@ -71,6 +70,15 @@ export default function UploadSection({ onDetectionComplete }: UploadSectionProp
       const result = await response.json();
 
       if (!response.ok) {
+        // Handle specific error types
+        if (result.isPlant === false) {
+          // Non-plant image error with helpful suggestions
+          const errorMessage = result.message || result.error;
+          const suggestions = result.suggestions?.join("\n• ") || "";
+          throw new Error(
+            `${errorMessage}\n\n${result.details ? `Detected: ${result.details}\n\n` : ""}${suggestions ? `Tips:\n• ${suggestions}` : ""}`
+          );
+        }
         throw new Error(result.error || "Analysis failed. Please try again.");
       }
       
@@ -194,7 +202,7 @@ export default function UploadSection({ onDetectionComplete }: UploadSectionProp
 
               <div className="flex gap-4">
                 <button
-                  onClick={handleAnalyze}
+                  onClick={startAnalysis}
                   disabled={isAnalyzing}
                   className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
@@ -228,7 +236,9 @@ export default function UploadSection({ onDetectionComplete }: UploadSectionProp
                     className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3"
                   >
                     <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-red-800">{error}</p>
+                    <div className="flex-1">
+                      <p className="text-red-800 whitespace-pre-line">{error}</p>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
