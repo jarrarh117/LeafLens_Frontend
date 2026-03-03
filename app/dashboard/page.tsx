@@ -60,7 +60,7 @@ const Header = ({ user, onLogout }: { user: any, onLogout: () => void }) => (
     initial={{ y: -100, opacity: 0 }}
     animate={{ y: 0, opacity: 1 }}
     transition={{ duration: 0.6, ease: "easeOut" }}
-    className="flex items-center justify-between px-8 py-6 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 backdrop-blur-xl sticky top-0 z-50 shadow-sm"
+    className="flex items-center justify-between px-4 md:px-8 py-6 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 backdrop-blur-xl sticky top-0 z-50 shadow-sm"
   >
     <motion.div 
       className="flex items-center gap-3"
@@ -68,46 +68,47 @@ const Header = ({ user, onLogout }: { user: any, onLogout: () => void }) => (
       transition={{ duration: 0.2 }}
     >
       <motion.div 
-        className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/25"
+        className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/25"
         whileHover={{ rotate: 5, scale: 1.1 }}
         transition={{ duration: 0.3 }}
       >
-        <Leaf size={26} strokeWidth={2.5} />
+        <Leaf size={22} className="md:w-[26px] md:h-[26px]" strokeWidth={2.5} />
       </motion.div>
       <div>
-        <h1 className="text-xl font-bold tracking-tight text-stone-900 dark:text-white">
+        <h1 className="text-lg md:text-xl font-bold tracking-tight text-stone-900 dark:text-white">
           LeafLens <span className="bg-gradient-to-r from-emerald-600 to-green-500 bg-clip-text text-transparent">AI</span>
         </h1>
-        <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-stone-400 dark:text-stone-500">
+        <p className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] font-semibold text-stone-400 dark:text-stone-500">
           Plant Health Intelligence
         </p>
       </div>
     </motion.div>
-    <div className="flex items-center gap-2 md:gap-4">
+    <div className="flex items-center gap-4">
       <motion.div 
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="hidden md:flex items-center gap-3 px-5 py-2.5 bg-stone-100 dark:bg-stone-800 rounded-full border border-stone-200 dark:border-stone-700"
+        className="flex items-center gap-3 px-3 md:px-5 py-2.5 bg-stone-100 dark:bg-stone-800 rounded-full border border-stone-200 dark:border-stone-700"
       >
-        <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm">
+        <div className="w-7 h-7 md:w-8 md:h-8 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold shadow-sm">
           {user?.displayName?.charAt(0)?.toUpperCase() || 'U'}
         </div>
-        <span className="text-sm font-semibold text-stone-900 dark:text-white">
+        <span className="text-xs md:text-sm font-semibold text-stone-900 dark:text-white hidden sm:inline">
           {user?.displayName?.split(' ')[0] || 'User'}
         </span>
       </motion.div>
-      <Link href="/api-keys">
+      {/* Desktop buttons */}
+      <Link href="/api-keys" className="hidden md:block">
         <motion.button 
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.25 }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="bg-gradient-to-r from-emerald-600 to-green-500 text-white px-3 py-2.5 md:px-5 rounded-full text-sm font-semibold hover:from-emerald-700 hover:to-green-600 transition-all shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 flex items-center gap-2"
+          className="bg-gradient-to-r from-emerald-600 to-green-500 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:from-emerald-700 hover:to-green-600 transition-all shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 flex items-center gap-2"
         >
           <Key size={18} />
-          <span className="hidden md:inline">Get API Key</span>
+          <span>Get API Key</span>
         </motion.button>
       </Link>
       <motion.button 
@@ -117,10 +118,10 @@ const Header = ({ user, onLogout }: { user: any, onLogout: () => void }) => (
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={onLogout}
-        className="bg-stone-900 dark:bg-stone-700 text-white px-3 py-2.5 md:px-6 rounded-full text-sm font-semibold hover:bg-stone-800 dark:hover:bg-stone-600 transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+        className="hidden md:flex bg-stone-900 dark:bg-stone-700 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-stone-800 dark:hover:bg-stone-600 transition-all shadow-lg hover:shadow-xl items-center gap-2"
       >
         <LogOut size={18} />
-        <span className="hidden md:inline">Logout</span>
+        <span>Logout</span>
       </motion.button>
     </div>
   </motion.header>
@@ -999,13 +1000,12 @@ export default function DashboardPage() {
             </motion.div>
           </div>
         </section>
-
         {/* Stats Section */}
         <motion.section 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
         >
           {[
             { icon: Search, label: "Total Scans", value: loadingStats ? "..." : stats.totalScans.toString(), color: "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400" },
@@ -1023,6 +1023,47 @@ export default function DashboardPage() {
               <StatCard {...stat} />
             </motion.div>
           ))}
+        </motion.section>
+
+        {/* Mobile Quick Actions - Only visible on mobile */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="md:hidden mb-16"
+        >
+          <div className="grid grid-cols-2 gap-4">
+            <Link href="/api-keys" className="block">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="bg-gradient-to-br from-emerald-500 to-green-600 text-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all flex flex-col items-center justify-center gap-3 text-center"
+              >
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  <Key size={24} />
+                </div>
+                <div>
+                  <p className="font-bold text-sm">API Keys</p>
+                  <p className="text-xs opacity-90">Manage access</p>
+                </div>
+              </motion.div>
+            </Link>
+            <motion.button
+              onClick={onLogout}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="bg-stone-900 dark:bg-stone-800 text-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all flex flex-col items-center justify-center gap-3 text-center"
+            >
+              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                <LogOut size={24} />
+              </div>
+              <div>
+                <p className="font-bold text-sm">Logout</p>
+                <p className="text-xs opacity-75">Sign out</p>
+              </div>
+            </motion.button>
+          </div>
+        </motion.section>
         </motion.section>
 
         {/* Camera Modal */}
