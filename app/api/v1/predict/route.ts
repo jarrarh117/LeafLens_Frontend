@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, updateDoc, increment, Timestamp } from "firebase/firestore";
 import { PLANT_CLASSES, parseClassName, getDiseaseInfo, getSeverity } from "@/lib/plantClasses";
 import { validateBase64Image, logSecurityEvent } from "@/lib/security";
 
@@ -195,50 +197,24 @@ async function validateApiKey(apiKey: string): Promise<{
 }> {
   // Check API key format (llai_ prefix + 32 chars)
   if (!apiKey || !apiKey.startsWith("llai_") || apiKey.length !== 37) {
-    console.log("❌ Invalid API key format:", { length: apiKey?.length, prefix: apiKey?.substring(0, 5) });
     return { valid: false, error: "Invalid API key format" };
   }
 
   try {
-    console.log("🔍 Validating API key:", apiKey.substring(0, 10) + "...");
-    
-    // Dynamically import Firebase to avoid build-time initialization
-    const { db } = await import("@/lib/firebase");
-    const { collection, query, where, getDocs } = await import("firebase/firestore");
-    
-    if (!db) {
-      console.error("❌ Database not available");
-      return { valid: false, error: "Database not available" };
-    }
-    
-    console.log("✅ Database connection established");
-    
     // Query Firestore for this API key
     const apiKeysRef = collection(db, "apiKeys");
     const q = query(apiKeysRef, where("key", "==", apiKey));
-    
-    console.log("🔍 Querying Firestore for API key...");
     const snapshot = await getDocs(q);
-    console.log("📊 Query result:", { empty: snapshot.empty, size: snapshot.size });
 
     if (snapshot.empty) {
-      console.log("❌ API key not found in database");
       return { valid: false, error: "API key not found" };
     }
 
     const keyDoc = snapshot.docs[0];
     const keyData = keyDoc.data();
-    
-    console.log("✅ API key found:", { 
-      id: keyDoc.id, 
-      userId: keyData.userId,
-      status: keyData.status,
-      plan: keyData.plan 
-    });
 
     // Check if key is active (allow keys without status field for backward compatibility)
     if (keyData.status && keyData.status !== "active") {
-      console.log("❌ API key is not active:", keyData.status);
       return { valid: false, error: "API key is inactive or revoked" };
     }
 
@@ -248,13 +224,8 @@ async function validateApiKey(apiKey: string): Promise<{
       keyDocId: keyDoc.id,
       plan: keyData.plan || "free",
     };
-  } catch (error: any) {
-    console.error("❌ API key validation error:", error);
-    console.error("Error details:", {
-      message: error.message,
-      code: error.code,
-      stack: error.stack
-    });
+  } catch (error) {
+    console.error("API key validation error:", error);
     return { valid: false, error: "Failed to validate API key" };
   }
 }
@@ -303,24 +274,15 @@ function checkRateLimit(apiKey: string, plan: string): { allowed: boolean; retry
 // ── Helper: Update API Key Usage Stats ───────────────────────────────────────
 async function updateApiKeyUsage(keyDocId: string) {
   try {
-    const { db } = await import("@/lib/firebase");
-    const { doc, updateDoc, increment, Timestamp } = await import("firebase/firestore");
-    
-    if (!db) {
-      console.error("❌ Database not available for usage tracking");
-      return;
-    }
-    
+    const { doc } = await import("firebase/firestore");
     const keyDocRef = doc(db, "apiKeys", keyDocId);
     
     await updateDoc(keyDocRef, {
       usageCount: increment(1),
       lastUsed: Timestamp.now(),
     });
-    
-    console.log(`✅ Updated usage for API key: ${keyDocId}`);
   } catch (error) {
-    console.error("❌ Failed to update API key usage:", error);
+    console.error("Failed to update API key usage:", error);
     // Don't fail the request if usage tracking fails
   }
 }
@@ -473,10 +435,7 @@ export async function POST(request: NextRequest) {
     const backendResult = await backendResponse.json();
 
     // ── Update API key usage stats (async, don't wait) ───────────────────
-    console.log(`📊 Updating usage for API key doc: ${validation.keyDocId}`);
-    updateApiKeyUsage(validation.keyDocId!).catch(err => {
-      console.error("Usage update failed:", err);
-    });
+    updateApiKeyUsage(validation.keyDocId!);
 
     // ── Enrich with disease info ─────────────────────────────────────────
     const topPrediction = backendResult.predictions[0];
