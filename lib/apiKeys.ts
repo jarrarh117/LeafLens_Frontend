@@ -82,6 +82,10 @@ export async function createApiKey(
   name: string,
   plan: 'free' | 'premium' | 'enterprise' = 'free'
 ): Promise<{ plainKey: string; keyId: string }> {
+  if (!db) {
+    throw new Error('Firebase not initialized');
+  }
+
   const plainKey = generateApiKey();
   const hashedKey = hashApiKey(plainKey);
   
@@ -114,6 +118,13 @@ export async function createApiKey(
  * @returns Validation result with key data if valid
  */
 export async function validateApiKey(plainKey: string): Promise<ApiKeyValidationResult> {
+  if (!db) {
+    return {
+      valid: false,
+      error: 'Firebase not initialized',
+    };
+  }
+
   // Check key format
   if (!plainKey || !plainKey.startsWith('pd_live_')) {
     return {
@@ -195,6 +206,11 @@ export async function validateApiKey(plainKey: string): Promise<ApiKeyValidation
  * @param keyId - Document ID of the API key
  */
 export async function incrementUsage(keyId: string): Promise<void> {
+  if (!db) {
+    console.error('Firebase not initialized');
+    return;
+  }
+
   try {
     const keyRef = doc(db, 'api_keys', keyId);
     await updateDoc(keyRef, {
@@ -212,6 +228,10 @@ export async function incrementUsage(keyId: string): Promise<void> {
  * @param keyId - Document ID of the API key
  */
 export async function deactivateApiKey(keyId: string): Promise<void> {
+  if (!db) {
+    throw new Error('Firebase not initialized');
+  }
+
   const keyRef = doc(db, 'api_keys', keyId);
   await updateDoc(keyRef, {
     isActive: false,
@@ -224,6 +244,10 @@ export async function deactivateApiKey(keyId: string): Promise<void> {
  * @returns Array of API keys (without hashed keys)
  */
 export async function getUserApiKeys(ownerId: string): Promise<Omit<ApiKey, 'hashedKey'>[]> {
+  if (!db) {
+    return [];
+  }
+
   const keysRef = collection(db, 'api_keys');
   const q = query(keysRef, where('ownerId', '==', ownerId));
   const snapshot = await getDocs(q);
