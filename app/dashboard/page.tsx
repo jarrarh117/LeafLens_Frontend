@@ -180,7 +180,8 @@ export default function DashboardPage() {
   // Fetch user stats from Firestore
   useEffect(() => {
     const fetchStats = async () => {
-      if (!user) return;
+      // Only run on client-side after mount
+      if (!user || !isMounted || typeof window === 'undefined') return;
       
       try {
         const { collection, query, where, getDocs, orderBy } = await import('firebase/firestore');
