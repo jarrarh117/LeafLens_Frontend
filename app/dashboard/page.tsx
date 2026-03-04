@@ -172,12 +172,14 @@ export default function DashboardPage() {
     }
   }, [user, loading, router, isMounted]);
 
-  // Show loader while auth is initializing or not mounted
+  useEffect(() => {
+    // Fetch user stats from Firestore
+    // ...existing fetchStats logic...
+  }, [user, isMounted]);
+
   if (loading || !user || !isMounted) {
     return <LeafLoader />;
   }
-
-  // Fetch user stats from Firestore
   useEffect(() => {
     const fetchStats = async () => {
       // Only run on client-side after mount
