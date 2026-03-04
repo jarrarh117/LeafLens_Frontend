@@ -56,77 +56,143 @@ const analyzePlantImage = async (base64Image: string): Promise<AnalysisResult> =
 };
 
 // --- Components ---
-const Header = ({ user, onLogout }: { user: any, onLogout: () => void }) => (
-  <motion.header 
-    initial={{ y: -100, opacity: 0 }}
-    animate={{ y: 0, opacity: 1 }}
-    transition={{ duration: 0.6, ease: "easeOut" }}
-    className="flex items-center justify-between px-4 md:px-8 py-6 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 backdrop-blur-xl sticky top-0 z-50 shadow-sm"
-  >
-    <motion.div 
-      className="flex items-center gap-3"
-      whileHover={{ scale: 1.02 }}
-      transition={{ duration: 0.2 }}
+const Header = ({ user, onLogout }: { user: any, onLogout: () => void }) => {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownOpen]);
+
+  return (
+    <motion.header 
+      initial={{ y: -100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="flex items-center justify-between px-4 md:px-8 py-6 border-b border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 backdrop-blur-xl sticky top-0 z-50 shadow-sm"
     >
       <motion.div 
-        className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/25"
-        whileHover={{ rotate: 5, scale: 1.1 }}
-        transition={{ duration: 0.3 }}
+        className="flex items-center gap-3"
+        whileHover={{ scale: 1.02 }}
+        transition={{ duration: 0.2 }}
       >
-        <Leaf size={22} className="md:w-[26px] md:h-[26px]" strokeWidth={2.5} />
-      </motion.div>
-      <div>
-        <h1 className="text-lg md:text-xl font-bold tracking-tight text-stone-900 dark:text-white">
-          LeafLens <span className="bg-gradient-to-r from-emerald-600 to-green-500 bg-clip-text text-transparent">AI</span>
-        </h1>
-        <p className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] font-semibold text-stone-400 dark:text-stone-500">
-          Plant Health Intelligence
-        </p>
-      </div>
-    </motion.div>
-    <div className="flex items-center gap-4">
-      <motion.div 
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="flex items-center gap-3 px-3 md:px-5 py-2.5 bg-stone-100 dark:bg-stone-800 rounded-full border border-stone-200 dark:border-stone-700"
-      >
-        <div className="w-7 h-7 md:w-8 md:h-8 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold shadow-sm">
-          {user?.displayName?.charAt(0)?.toUpperCase() || 'U'}
-        </div>
-        <span className="text-xs md:text-sm font-semibold text-stone-900 dark:text-white hidden sm:inline">
-          {user?.displayName?.split(' ')[0] || 'User'}
-        </span>
-      </motion.div>
-      {/* Desktop buttons */}
-      <Link href="/api-keys" className="hidden md:block">
-        <motion.button 
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.25 }}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="bg-gradient-to-r from-emerald-600 to-green-500 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:from-emerald-700 hover:to-green-600 transition-all shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 flex items-center gap-2"
+        <motion.div 
+          className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/25"
+          whileHover={{ rotate: 5, scale: 1.1 }}
+          transition={{ duration: 0.3 }}
         >
-          <Key size={18} />
-          <span>API Keys</span>
-        </motion.button>
-      </Link>
-      <motion.button 
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={onLogout}
-        className="hidden md:flex bg-stone-900 dark:bg-stone-700 text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-stone-800 dark:hover:bg-stone-600 transition-all shadow-lg hover:shadow-xl items-center gap-2"
-      >
-        <LogOut size={18} />
-        <span>Logout</span>
-      </motion.button>
-    </div>
-  </motion.header>
-);
+          <Leaf size={22} className="md:w-[26px] md:h-[26px]" strokeWidth={2.5} />
+        </motion.div>
+        <div>
+          <h1 className="text-lg md:text-xl font-bold tracking-tight text-stone-900 dark:text-white">
+            LeafLens <span className="bg-gradient-to-r from-emerald-600 to-green-500 bg-clip-text text-transparent">AI</span>
+          </h1>
+          <p className="text-[9px] md:text-[10px] uppercase tracking-[0.2em] font-semibold text-stone-400 dark:text-stone-500">
+            Plant Health Intelligence
+          </p>
+        </div>
+      </motion.div>
+      <div className="flex items-center gap-4">
+        {/* Desktop API Keys button */}
+        <Link href="/api-keys" className="hidden md:block">
+          <motion.button 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.25 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="bg-gradient-to-r from-emerald-600 to-green-500 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:from-emerald-700 hover:to-green-600 transition-all shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 flex items-center gap-2"
+          >
+            <Key size={18} />
+            <span>API Keys</span>
+          </motion.button>
+        </Link>
+
+        {/* User dropdown menu */}
+        <div className="relative" ref={dropdownRef}>
+          <motion.button
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="flex items-center gap-3 px-3 md:px-5 py-2.5 bg-stone-100 dark:bg-stone-800 rounded-full border border-stone-200 dark:border-stone-700 hover:bg-stone-200 dark:hover:bg-stone-700 transition-all cursor-pointer"
+          >
+            <div className="w-7 h-7 md:w-8 md:h-8 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full flex items-center justify-center text-white text-xs md:text-sm font-bold shadow-sm">
+              {user?.displayName?.charAt(0)?.toUpperCase() || 'U'}
+            </div>
+            <span className="text-xs md:text-sm font-semibold text-stone-900 dark:text-white hidden sm:inline">
+              {user?.displayName?.split(' ')[0] || 'User'}
+            </span>
+            <svg 
+              className={cn(
+                "w-4 h-4 text-stone-600 dark:text-stone-400 transition-transform duration-200",
+                dropdownOpen && "rotate-180"
+              )} 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </motion.button>
+
+          {/* Dropdown menu */}
+          <AnimatePresence>
+            {dropdownOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
+                className="absolute right-0 mt-2 w-56 bg-white dark:bg-stone-800 rounded-2xl shadow-xl border border-stone-200 dark:border-stone-700 overflow-hidden z-50"
+              >
+                <div className="p-4 border-b border-stone-200 dark:border-stone-700">
+                  <p className="text-sm font-semibold text-stone-900 dark:text-white truncate">
+                    {user?.displayName || 'User'}
+                  </p>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 truncate mt-0.5">
+                    {user?.email}
+                  </p>
+                </div>
+                <div className="py-2">
+                  <Link href="/api-keys" onClick={() => setDropdownOpen(false)}>
+                    <button className="w-full px-4 py-3 text-left text-sm font-medium text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors flex items-center gap-3">
+                      <Key size={18} className="text-emerald-600" />
+                      <span>API Keys</span>
+                    </button>
+                  </Link>
+                  <button 
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      onLogout();
+                    }}
+                    className="w-full px-4 py-3 text-left text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-3"
+                  >
+                    <LogOut size={18} />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </motion.header>
+  );
+};
 
 const StatCard = ({ icon: Icon, label, value, color }: { icon: any, label: string, value: string, color: string }) => (
   <div className="p-6 rounded-2xl flex flex-col gap-4 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 shadow-lg hover:shadow-xl transition-all duration-300 group">
