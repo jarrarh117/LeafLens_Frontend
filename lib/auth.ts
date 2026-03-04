@@ -15,6 +15,14 @@ import { auth, db } from "./firebase";
 import { getErrorMessage, logError } from "./errors";
 import { rateLimit, getClientIdentifier, RATE_LIMITS, logSecurityEvent } from "./security";
 
+// Helper to ensure Firebase is initialized
+function ensureFirebaseInitialized() {
+  if (!auth || !db) {
+    throw new Error('Firebase not initialized. This function can only be called on the client side.');
+  }
+  return { auth, db };
+}
+
 // Rate limiters for auth endpoints
 const loginRateLimit = rateLimit(RATE_LIMITS.login);
 const signupRateLimit = rateLimit(RATE_LIMITS.signup);
@@ -35,6 +43,8 @@ export async function signUp(
   password: string,
   displayName: string
 ): Promise<User> {
+  const { auth, db } = ensureFirebaseInitialized();
+
   // Rate limiting
   const rateLimitResult = signupRateLimit(email);
 
@@ -83,6 +93,8 @@ export async function signUp(
 
 // Sign in with email and password
 export async function signIn(email: string, password: string): Promise<User> {
+  const { auth } = ensureFirebaseInitialized();
+
   // Rate limiting
   const identifier = email; // Use email as identifier for login rate limiting
   const rateLimitResult = loginRateLimit(identifier);
@@ -113,24 +125,24 @@ export async function signIn(email: string, password: string): Promise<User> {
 
 // Sign in with Google
 export async function signInWithGoogle(): Promise<User> {
+  const { auth, db } = ensureFirebaseInitialized();
+
   try {
     const provider = new GoogleAuthProvider();
     const userCredential = await signInWithPopup(auth, provider);
     const user = userCredential.user;
 
     // Check if user document exists, if not create it
-    if (db) {
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (!userDoc.exists()) {
-        await setDoc(doc(db, "users", user.uid), {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-          createdAt: new Date(),
-          totalScans: 0,
-        });
-      }
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (!userDoc.exists()) {
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        createdAt: new Date(),
+        totalScans: 0,
+      });
     }
 
     return user;
@@ -142,6 +154,8 @@ export async function signInWithGoogle(): Promise<User> {
 
 // Sign out
 export async function logOut(): Promise<void> {
+  const { auth } = ensureFirebaseInitialized();
+
   try {
     await signOut(auth);
   } catch (error: any) {
@@ -152,6 +166,8 @@ export async function logOut(): Promise<void> {
 
 // Reset password
 export async function resetPassword(email: string): Promise<void> {
+  const { auth } = ensureFirebaseInitialized();
+
   // Rate limiting
   const rateLimitResult = passwordResetRateLimit(email);
 
@@ -176,11 +192,16 @@ export async function resetPassword(email: string): Promise<void> {
 
 // Get current user
 export function getCurrentUser(): User | null {
+  if (!auth) return null;
   return auth.currentUser;
 }
 
 // Listen to auth state changes
 export function onAuthChange(callback: (user: User | null) => void) {
+  if (!auth) {
+    callback(null);
+    return () => {};
+  }
   return onAuthStateChanged(auth, callback);
 }
 
@@ -201,6 +222,8 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
 
 // Resend verification email
 export async function resendVerificationEmail(): Promise<void> {
+  const { auth } = ensureFirebaseInitialized();
+
   try {
     const user = auth.currentUser;
     if (user && !user.emailVerified) {
@@ -216,6 +239,8 @@ export async function resendVerificationEmail(): Promise<void> {
 
 // Check if email is verified
 export async function checkEmailVerified(): Promise<boolean> {
+  const { auth } = ensureFirebaseInitialized();
+
   try {
     const user = auth.currentUser;
     if (user) {
