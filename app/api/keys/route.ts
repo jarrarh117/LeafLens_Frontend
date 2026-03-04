@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateApiKey, hashApiKey, PLAN_LIMITS } from '@/lib/apiKeys';
+import { generateApiKey, hashApiKey, PLAN_LIMITS } from '@/lib/apiKeysServer';
 import * as admin from 'firebase-admin';
 
 // Initialize Firebase Admin SDK
