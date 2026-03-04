@@ -294,10 +294,10 @@ export default function DashboardPage() {
       }
     };
 
-    if (user) {
+    if (user && isMounted) {
       fetchStats();
     }
-  }, [user]);
+  }, [user, isMounted]);
 
   const handleLogout = async () => {
     try {
