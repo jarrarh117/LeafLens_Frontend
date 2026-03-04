@@ -152,7 +152,8 @@ export default function DashboardPage() {
     }
   }, [user, loading, router]);
 
-  if (loading) {
+  // Show loader while auth is initializing
+  if (loading || !user) {
     return <LeafLoader />;
   }
 
