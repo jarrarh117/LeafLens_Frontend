@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiKey, getUserApiKeys, deactivateApiKey } from '@/lib/apiKeys';
-import { auth } from 'firebase-admin';
+import * as admin from 'firebase-admin';
 
 // Initialize Firebase Admin (if not already initialized)
-let adminAuth: typeof auth;
-try {
-  const admin = require('firebase-admin');
-  if (!admin.apps.length) {
+if (!admin.apps.length) {
+  try {
     admin.initializeApp({
       credential: admin.credential.cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
@@ -14,10 +12,9 @@ try {
         privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
       }),
     });
+  } catch (error) {
+    console.error('Firebase Admin initialization error:', error);
   }
-  adminAuth = admin.auth();
-} catch (error) {
-  console.error('Firebase Admin initialization error:', error);
 }
 
 // ── Helper: Verify Firebase ID Token ─────────────────────────────────────────
@@ -29,7 +26,7 @@ async function verifyUser(request: NextRequest): Promise<{ uid: string; email: s
     }
 
     const idToken = authHeader.split('Bearer ')[1];
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
     
     return {
       uid: decodedToken.uid,
