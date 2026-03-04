@@ -44,10 +44,20 @@ export default function ApiKeysPage() {
       if (!user) return;
 
       try {
-        const response = await fetch('/api/keys');
+        // Get the user's ID token
+        const idToken = await user.getIdToken();
+        
+        const response = await fetch('/api/keys', {
+          headers: {
+            'Authorization': `Bearer ${idToken}`
+          }
+        });
+        
         if (response.ok) {
           const keys = await response.json();
           setApiKeys(keys);
+        } else {
+          console.error('Failed to load API keys:', response.status);
         }
       } catch (error) {
         console.error('Failed to load API keys:', error);
@@ -66,9 +76,15 @@ export default function ApiKeysPage() {
 
     setCreating(true);
     try {
+      // Get the user's ID token
+      const idToken = await user.getIdToken();
+      
       const response = await fetch('/api/keys', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
         body: JSON.stringify({ name: newKeyName }),
       });
 
@@ -95,8 +111,14 @@ export default function ApiKeysPage() {
     }
 
     try {
+      // Get the user's ID token
+      const idToken = await user!.getIdToken();
+      
       const response = await fetch(`/api/keys?id=${keyId}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${idToken}`
+        }
       });
 
       if (response.ok) {
