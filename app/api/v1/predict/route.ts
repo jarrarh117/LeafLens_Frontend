@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateApiKey, incrementUsage, checkRateLimit } from '@/lib/apiKeys';
+import { validateApiKey, incrementUsage, checkRateLimit } from '@/lib/apiKeysServer';
 import { validateBase64Image, logSecurityEvent } from '@/lib/security';
 
 // ── Configuration ────────────────────────────────────────────────────────────
