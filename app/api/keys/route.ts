@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateApiKey, hashApiKey, PLAN_LIMITS } from '@/lib/apiKeys';
 import * as admin from 'firebase-admin';
-import crypto from 'crypto';
 
-// Initialize Firebase Admin (if not already initialized)
-if (!admin.apps.length) {
-  try {
+// Initialize Firebase Admin SDK
+function getFirebaseAdmin() {
+  if (!admin.apps.length) {
     const projectId = process.env.FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
     const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
     if (!projectId || !clientEmail || !privateKey) {
-      console.error('Missing Firebase Admin environment variables:', {
-        hasProjectId: !!projectId,
-        hasClientEmail: !!clientEmail,
-        hasPrivateKey: !!privateKey,
-      });
       throw new Error('Firebase Admin environment variables not configured');
     }
 
@@ -26,15 +20,14 @@ if (!admin.apps.length) {
         privateKey: privateKey.replace(/\\n/g, '\n'),
       }),
     });
-    
-    console.log('Firebase Admin initialized successfully');
-  } catch (error) {
-    console.error('Firebase Admin initialization error:', error);
-    throw error;
   }
+  
+  return admin;
 }
 
-const db = admin.firestore();
+function getDb() {
+  return getFirebaseAdmin().firestore();
+}
 
 // ── Helper: Verify Firebase ID Token ─────────────────────────────────────────
 async function verifyUser(request: NextRequest): Promise<{ uid: string; email: string } | null> {
@@ -45,7 +38,7 @@ async function verifyUser(request: NextRequest): Promise<{ uid: string; email: s
     }
 
     const idToken = authHeader.split('Bearer ')[1];
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const decodedToken = await getFirebaseAdmin().auth().verifyIdToken(idToken);
     
     return {
       uid: decodedToken.uid,
@@ -71,6 +64,8 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    const db = getDb();
 
     // Get keys from Firestore using Admin SDK
     const keysSnapshot = await db.collection('api_keys')
@@ -134,6 +129,8 @@ export async function POST(request: NextRequest) {
 
     console.log('POST /api/keys - Creating key for user:', user.uid, 'name:', name);
 
+    const db = getDb();
+
     // Generate API key using utility functions
     const plainKey = generateApiKey();
     const hashedKey = hashApiKey(plainKey);
@@ -147,7 +144,7 @@ export async function POST(request: NextRequest) {
       plan,
       usageCount: 0,
       usageLimit: PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS].requestsPerMonth,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: getFirebaseAdmin().firestore.FieldValue.serverTimestamp(),
       lastUsedAt: null,
       expiresAt: null,
     };
@@ -205,6 +202,8 @@ export async function DELETE(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    const db = getDb();
 
     // Get the key document
     const keyDoc = await db.collection('api_keys').doc(keyId).get();
