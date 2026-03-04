@@ -55,7 +55,13 @@ export default function ApiKeysPage() {
         
         if (response.ok) {
           const keys = await response.json();
-          setApiKeys(keys);
+          // Convert date strings to Date objects
+          const keysWithDates = keys.map((key: any) => ({
+            ...key,
+            createdAt: new Date(key.createdAt),
+            lastUsedAt: key.lastUsedAt ? new Date(key.lastUsedAt) : undefined,
+          }));
+          setApiKeys(keysWithDates);
         } else {
           console.error('Failed to load API keys:', response.status);
         }
