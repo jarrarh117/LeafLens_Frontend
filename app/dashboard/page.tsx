@@ -999,8 +999,8 @@ export default function DashboardPage() {
           transition={{ duration: 0.6, delay: 0.6 }}
           className="md:hidden mb-16"
         >
-          <div className="grid grid-cols-2 gap-4">
-            <Link href="/api-keys" className="block">
+          <div className="flex justify-center">
+            <Link href="/api-keys" className="block w-full max-w-xs">
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -1015,20 +1015,6 @@ export default function DashboardPage() {
                 </div>
               </motion.div>
             </Link>
-            <motion.button
-              onClick={handleLogout}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="bg-stone-900 dark:bg-stone-800 text-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all flex flex-col items-center justify-center gap-3 text-center"
-            >
-              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
-                <LogOut size={24} />
-              </div>
-              <div>
-                <p className="font-bold text-sm">Logout</p>
-                <p className="text-xs opacity-75">Sign out</p>
-              </div>
-            </motion.button>
           </div>
         </motion.section>
 
