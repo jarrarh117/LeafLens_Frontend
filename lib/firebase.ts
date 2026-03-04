@@ -32,22 +32,27 @@ let auth: Auth;
 let analytics: Analytics | undefined;
 
 // Initialize Firebase app (works on both server and client)
-app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-db = getFirestore(app);
-storage = getStorage(app);
-auth = getAuth(app);
-
-// Set auth persistence to LOCAL (persists even after browser closes)
-// This runs only on client side
 if (typeof window !== 'undefined') {
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  db = getFirestore(app);
+  storage = getStorage(app);
+  auth = getAuth(app);
+
+  // Set auth persistence to LOCAL (persists even after browser closes)
   setPersistence(auth, browserLocalPersistence).catch((error) => {
     console.error('Error setting auth persistence:', error);
   });
-}
 
-// Analytics only works in browser
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-  analytics = getAnalytics(app);
+  // Analytics only works in browser
+  if (process.env.NODE_ENV === 'production') {
+    analytics = getAnalytics(app);
+  }
+} else {
+  // Server-side: Initialize without persistence
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  db = getFirestore(app);
+  storage = getStorage(app);
+  auth = getAuth(app);
 }
 
 export { app, db, storage, auth, analytics };
