@@ -5,15 +5,31 @@ import * as admin from 'firebase-admin';
 // Initialize Firebase Admin (if not already initialized)
 if (!admin.apps.length) {
   try {
+    const projectId = process.env.FIREBASE_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+    if (!projectId || !clientEmail || !privateKey) {
+      console.error('Missing Firebase Admin environment variables:', {
+        hasProjectId: !!projectId,
+        hasClientEmail: !!clientEmail,
+        hasPrivateKey: !!privateKey,
+      });
+      throw new Error('Firebase Admin environment variables not configured');
+    }
+
     admin.initializeApp({
       credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        projectId,
+        clientEmail,
+        privateKey: privateKey.replace(/\\n/g, '\n'),
       }),
     });
+    
+    console.log('Firebase Admin initialized successfully');
   } catch (error) {
     console.error('Firebase Admin initialization error:', error);
+    throw error;
   }
 }
 
@@ -84,14 +100,19 @@ export async function GET(request: NextRequest) {
 // ═════════════════════════════════════════════════════════════════════════════
 export async function POST(request: NextRequest) {
   try {
+    console.log('POST /api/keys - Starting');
+    
     const user = await verifyUser(request);
     
     if (!user) {
+      console.log('POST /api/keys - Unauthorized: No user');
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized - Please log in again' },
         { status: 401 }
       );
     }
+
+    console.log('POST /api/keys - User verified:', user.uid);
 
     const body = await request.json();
     const { name, plan = 'free' } = body;
@@ -103,6 +124,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('POST /api/keys - Creating key for user:', user.uid, 'name:', name);
+
     // Create the API key
     const { plainKey, keyId } = await createApiKey(
       user.uid,
@@ -110,6 +133,8 @@ export async function POST(request: NextRequest) {
       name,
       plan
     );
+
+    console.log('POST /api/keys - Key created:', keyId);
 
     // Get the created key data
     const keys = await getUserApiKeys(user.uid);
@@ -129,10 +154,10 @@ export async function POST(request: NextRequest) {
         isActive: true,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('POST /api/keys error:', error);
     return NextResponse.json(
-      { error: 'Failed to create API key' },
+      { error: error.message || 'Failed to create API key' },
       { status: 500 }
     );
   }
