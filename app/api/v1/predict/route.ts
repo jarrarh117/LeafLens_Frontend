@@ -13,6 +13,79 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400',
 };
 
+// ── Helper Functions ─────────────────────────────────────────────────────────
+function calculateSeverity(confidence: number): string {
+  if (confidence >= 95) return 'high';
+  if (confidence >= 80) return 'medium';
+  return 'low';
+}
+
+function generateRecommendations(condition: string, plant: string): string[] {
+  const conditionLower = condition.toLowerCase();
+  
+  if (conditionLower.includes('healthy')) {
+    return [
+      'Plant appears healthy - continue regular care',
+      'Monitor regularly for any changes',
+      'Maintain proper watering and sunlight',
+    ];
+  }
+  
+  if (conditionLower.includes('blight')) {
+    return [
+      'Remove and destroy infected leaves immediately',
+      'Apply copper-based fungicide',
+      'Improve air circulation around plants',
+      'Avoid overhead watering',
+      'Mulch to prevent soil splash',
+    ];
+  }
+  
+  if (conditionLower.includes('spot') || conditionLower.includes('leaf spot')) {
+    return [
+      'Remove infected leaves',
+      'Apply appropriate fungicide',
+      'Ensure proper spacing between plants',
+      'Water at soil level, not on leaves',
+    ];
+  }
+  
+  if (conditionLower.includes('mold') || conditionLower.includes('mildew')) {
+    return [
+      'Improve air circulation',
+      'Reduce humidity around plants',
+      'Apply fungicide treatment',
+      'Remove severely affected leaves',
+    ];
+  }
+  
+  if (conditionLower.includes('rust')) {
+    return [
+      'Remove infected leaves',
+      'Apply sulfur or copper-based fungicide',
+      'Avoid wetting foliage when watering',
+      'Ensure good air circulation',
+    ];
+  }
+  
+  if (conditionLower.includes('mosaic') || conditionLower.includes('virus')) {
+    return [
+      'Remove and destroy infected plants',
+      'Control aphids and other vectors',
+      'Disinfect tools between plants',
+      'Plant resistant varieties',
+    ];
+  }
+  
+  // Generic recommendations
+  return [
+    'Isolate affected plants if possible',
+    'Remove infected plant material',
+    'Consult local agricultural extension for treatment',
+    'Monitor other plants for similar symptoms',
+  ];
+}
+
 // ═════════════════════════════════════════════════════════════════════════════
 // OPTIONS /api/v1/predict
 // Handle CORS preflight requests
@@ -188,6 +261,20 @@ export async function POST(request: NextRequest) {
 
     const result = await backendResponse.json();
 
+    // ── Transform backend response to user-friendly format ───────────────
+    const topPrediction = result.predictions?.[0];
+    
+    if (!topPrediction) {
+      return NextResponse.json(
+        { error: 'No predictions returned from model' },
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
+    // Generate recommendations based on disease severity
+    const recommendations = generateRecommendations(topPrediction.condition, topPrediction.plant);
+    const severity = calculateSeverity(topPrediction.confidence);
+
     // ── Increment Usage Count (async, don't wait) ────────────────────────
     incrementUsage(keyData.id).catch(err => 
       console.error('Failed to increment usage:', err)
@@ -197,7 +284,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        ...result,
+        disease: `${topPrediction.plant} ${topPrediction.condition}`,
+        plant: topPrediction.plant,
+        condition: topPrediction.condition,
+        confidence: `${topPrediction.confidence.toFixed(1)}%`,
+        severity,
+        description: `Detected ${topPrediction.condition.toLowerCase()} in ${topPrediction.plant.toLowerCase()} plant.`,
+        recommendations,
+        predictions: result.predictions,
         usage: {
           requestsUsed: keyData.usageCount + 1,
           requestsRemaining: validation.remainingRequests! - 1,
