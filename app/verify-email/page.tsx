@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Mail, Loader2, CheckCircle, RefreshCw, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { resendVerificationEmail, checkEmailVerified, logOut } from "@/lib/auth";
+import LeafLoader from "@/components/LeafLoader";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
@@ -86,11 +87,7 @@ export default function VerifyEmailPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-green-600 animate-spin" />
-      </div>
-    );
+    return <LeafLoader />;
   }
 
   return (
