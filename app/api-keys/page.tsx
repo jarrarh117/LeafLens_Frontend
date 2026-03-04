@@ -48,11 +48,13 @@ export default function ApiKeysPage() {
   // Load API keys
   useEffect(() => {
     const loadApiKeys = async () => {
-      if (!user) return;
+      if (!user || !isMounted) return;
 
       try {
         // Get the user's ID token
-        const idToken = await user.getIdToken();
+        const idToken = await user.getIdToken(true); // Force refresh
+        
+        console.log('Loading API keys for user:', user.uid);
         
         const response = await fetch('/api/keys', {
           headers: {
@@ -62,6 +64,7 @@ export default function ApiKeysPage() {
         
         if (response.ok) {
           const keys = await response.json();
+          console.log('Loaded API keys:', keys);
           // Convert date strings to Date objects
           const keysWithDates = keys.map((key: any) => ({
             ...key,
@@ -70,27 +73,34 @@ export default function ApiKeysPage() {
           }));
           setApiKeys(keysWithDates);
         } else {
-          console.error('Failed to load API keys:', response.status);
+          const errorData = await response.json();
+          console.error('Failed to load API keys:', response.status, errorData);
+          alert(`Failed to load API keys: ${errorData.error || 'Unknown error'}`);
         }
       } catch (error) {
         console.error('Failed to load API keys:', error);
+        alert('Failed to load API keys. Please refresh the page.');
       } finally {
         setLoadingKeys(false);
       }
     };
 
-    if (user) {
+    if (user && isMounted) {
       loadApiKeys();
     }
-  }, [user]);
+  }, [user, isMounted]);
 
   const handleCreateKey = async () => {
     if (!newKeyName.trim() || !user || creating) return;
 
     setCreating(true);
     try {
+      console.log('Creating API key for user:', user.uid);
+      
       // Get the user's ID token
-      const idToken = await user.getIdToken();
+      const idToken = await user.getIdToken(true); // Force refresh
+      
+      console.log('Got ID token, making request...');
       
       const response = await fetch('/api/keys', {
         method: 'POST',
@@ -101,18 +111,32 @@ export default function ApiKeysPage() {
         body: JSON.stringify({ name: newKeyName }),
       });
 
+      console.log('Response status:', response.status);
+
       if (response.ok) {
-        const { plainKey, keyData } = await response.json();
+        const data = await response.json();
+        console.log('API key created successfully:', data);
+        
+        const { plainKey, keyData } = data;
+        
+        // Ensure keyData has proper date objects
+        const formattedKeyData = {
+          ...keyData,
+          createdAt: keyData.createdAt ? new Date(keyData.createdAt) : new Date(),
+          lastUsedAt: keyData.lastUsedAt ? new Date(keyData.lastUsedAt) : undefined,
+        };
+        
         setGeneratedKey(plainKey);
-        setApiKeys([keyData, ...apiKeys]);
+        setApiKeys([formattedKeyData, ...apiKeys]);
         setNewKeyName('');
       } else {
         const error = await response.json();
+        console.error('Failed to create API key:', error);
         alert(error.error || 'Failed to create API key');
       }
     } catch (error) {
       console.error('Error creating API key:', error);
-      alert('Failed to create API key');
+      alert('Failed to create API key. Please try again.');
     } finally {
       setCreating(false);
     }
@@ -371,11 +395,12 @@ export default function ApiKeysPage() {
                   </div>
                   <div className="bg-stone-50 dark:bg-stone-800 rounded-xl p-4 mb-6">
                     <code className="text-sm font-mono text-stone-900 dark:text-white break-all block mb-3">
-                      {generatedKey}
+                      {generatedKey || 'Loading...'}
                     </code>
                     <button
-                      onClick={() => copyToClipboard(generatedKey, 'new')}
-                      className="w-full bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-900 dark:text-white px-4 py-2 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all"
+                      onClick={() => generatedKey && copyToClipboard(generatedKey, 'new')}
+                      disabled={!generatedKey}
+                      className="w-full bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-900 dark:text-white px-4 py-2 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                     >
                       {copiedKey === 'new' ? (
                         <>
