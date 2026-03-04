@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { AlertTriangle, Home, RefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function Error({
   error,
@@ -12,10 +13,35 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const router = useRouter();
+  const [autoRetried, setAutoRetried] = useState(false);
+
   useEffect(() => {
     // Log the error to an error reporting service
     console.error("Application error:", error);
-  }, [error]);
+
+    // Auto-retry once for Firebase initialization errors (hydration issues)
+    if (!autoRetried && error.message?.includes('Firebase')) {
+      setAutoRetried(true);
+      // Wait a moment for client-side hydration to complete
+      const timer = setTimeout(() => {
+        reset();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [error, reset, autoRetried]);
+
+  // Show loading state during auto-retry
+  if (!autoRetried && error.message?.includes('Firebase')) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+          <p className="mt-4 text-stone-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 flex items-center justify-center p-4">
