@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Leaf, Upload, Camera, Search, AlertCircle, CheckCircle2, Info, RefreshCcw, Sprout, ShieldCheck, Zap, History, LogOut } from 'lucide-react';
+import { Leaf, Upload, Camera, Search, AlertCircle, CheckCircle2, Info, RefreshCcw, Sprout, ShieldCheck, Zap, History, LogOut, Key } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { logOut } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import LeafLoader from "@/components/LeafLoader";
 
 // Utility for tailwind classes
@@ -97,7 +98,20 @@ const Header = ({ user, onLogout }: { user: any, onLogout: () => void }) => (
           {user?.displayName?.split(' ')[0] || 'User'}
         </span>
       </motion.div>
-      {/* Desktop logout button */}
+      {/* Desktop buttons */}
+      <Link href="/api-keys" className="hidden md:block">
+        <motion.button 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.25 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="bg-gradient-to-r from-emerald-600 to-green-500 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:from-emerald-700 hover:to-green-600 transition-all shadow-lg hover:shadow-xl hover:shadow-emerald-500/25 flex items-center gap-2"
+        >
+          <Key size={18} />
+          <span>API Keys</span>
+        </motion.button>
+      </Link>
       <motion.button 
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -911,12 +925,27 @@ export default function DashboardPage() {
           transition={{ duration: 0.6, delay: 0.6 }}
           className="md:hidden mb-16"
         >
-          <div className="flex justify-center">
+          <div className="grid grid-cols-2 gap-4">
+            <Link href="/api-keys" className="block">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="bg-gradient-to-br from-emerald-500 to-green-600 text-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all flex flex-col items-center justify-center gap-3 text-center"
+              >
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  <Key size={24} />
+                </div>
+                <div>
+                  <p className="font-bold text-sm">API Keys</p>
+                  <p className="text-xs opacity-90">Manage access</p>
+                </div>
+              </motion.div>
+            </Link>
             <motion.button
               onClick={handleLogout}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="bg-stone-900 dark:bg-stone-800 text-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all flex flex-col items-center justify-center gap-3 text-center w-48"
+              className="bg-stone-900 dark:bg-stone-800 text-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all flex flex-col items-center justify-center gap-3 text-center"
             >
               <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
                 <LogOut size={24} />
