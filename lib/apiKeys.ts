@@ -143,9 +143,9 @@ export async function validateApiKey(plainKey: string): Promise<ApiKeyValidation
     const apiKey: ApiKey = {
       id: keyDoc.id,
       ...keyData,
-      createdAt: keyData.createdAt?.toDate?.() || new Date(),
-      lastUsedAt: keyData.lastUsedAt?.toDate?.(),
-      expiresAt: keyData.expiresAt?.toDate?.(),
+      createdAt: keyData.createdAt instanceof Date ? keyData.createdAt : (keyData.createdAt as any)?.toDate?.() || new Date(),
+      lastUsedAt: keyData.lastUsedAt instanceof Date ? keyData.lastUsedAt : (keyData.lastUsedAt as any)?.toDate?.(),
+      expiresAt: keyData.expiresAt instanceof Date ? keyData.expiresAt : (keyData.expiresAt as any)?.toDate?.(),
     };
 
     // Check if key is active
@@ -239,9 +239,9 @@ export async function getUserApiKeys(ownerId: string): Promise<Omit<ApiKey, 'has
       plan: data.plan,
       usageCount: data.usageCount,
       usageLimit: data.usageLimit,
-      createdAt: data.createdAt?.toDate?.() || new Date(),
-      lastUsedAt: data.lastUsedAt?.toDate?.(),
-      expiresAt: data.expiresAt?.toDate?.(),
+      createdAt: data.createdAt instanceof Date ? data.createdAt : (data.createdAt as any)?.toDate?.() || new Date(),
+      lastUsedAt: data.lastUsedAt instanceof Date ? data.lastUsedAt : (data.lastUsedAt as any)?.toDate?.(),
+      expiresAt: data.expiresAt instanceof Date ? data.expiresAt : (data.expiresAt as any)?.toDate?.(),
     };
   });
 }
