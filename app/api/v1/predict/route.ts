@@ -4,7 +4,22 @@ import { validateBase64Image, logSecurityEvent } from '@/lib/security';
 
 // ── Configuration ────────────────────────────────────────────────────────────
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
-const HF_TOKEN = process.env.HF_TOKEN; // Hugging Face API token
+
+// CORS headers for cross-origin requests
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, x-api-key',
+  'Access-Control-Max-Age': '86400',
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// OPTIONS /api/v1/predict
+// Handle CORS preflight requests
+// ═════════════════════════════════════════════════════════════════════════════
+export async function OPTIONS() {
+  return NextResponse.json({}, { status: 200, headers: corsHeaders });
+}
 
 // ═════════════════════════════════════════════════════════════════════════════
 // POST /api/v1/predict
@@ -25,7 +40,7 @@ export async function POST(request: NextRequest) {
           message: 'Please provide your API key in the x-api-key header',
           documentation: 'https://leaflens-six.vercel.app/api-docs',
         },
-        { status: 401 }
+        { status: 401, headers: corsHeaders }
       );
     }
 
@@ -44,7 +59,7 @@ export async function POST(request: NextRequest) {
           error: 'Invalid API key',
           message: validation.error,
         },
-        { status: 401 }
+        { status: 401, headers: corsHeaders }
       );
     }
 
@@ -53,7 +68,7 @@ export async function POST(request: NextRequest) {
     if (!keyData) {
       return NextResponse.json(
         { error: 'API key validation failed' },
-        { status: 500 }
+        { status: 500, headers: corsHeaders }
       );
     }
 
@@ -70,6 +85,7 @@ export async function POST(request: NextRequest) {
         {
           status: 429,
           headers: {
+            ...corsHeaders,
             'Retry-After': '60',
             'X-RateLimit-Limit': String(
               keyData.plan === 'free' ? 10 : keyData.plan === 'premium' ? 60 : 'unlimited'
@@ -87,7 +103,7 @@ export async function POST(request: NextRequest) {
     } catch {
       return NextResponse.json(
         { error: 'Invalid JSON in request body' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -99,7 +115,7 @@ export async function POST(request: NextRequest) {
           error: 'No image provided',
           message: 'Please include an "image" field with a base64-encoded image',
         },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -108,7 +124,7 @@ export async function POST(request: NextRequest) {
     if (!imageValidation.isValid) {
       return NextResponse.json(
         { error: imageValidation.error },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -157,7 +173,7 @@ export async function POST(request: NextRequest) {
           error: 'AI model service unavailable',
           message: 'The inference service is currently unavailable. Please try again later.',
         },
-        { status: 503 }
+        { status: 503, headers: corsHeaders }
       );
     }
 
@@ -166,7 +182,7 @@ export async function POST(request: NextRequest) {
       console.error('Backend error:', backendResponse.status, errorData);
       return NextResponse.json(
         { error: errorData.detail || 'AI model returned an error' },
-        { status: backendResponse.status }
+        { status: backendResponse.status, headers: corsHeaders }
       );
     }
 
@@ -190,6 +206,7 @@ export async function POST(request: NextRequest) {
       },
       {
         headers: {
+          ...corsHeaders,
           'X-RateLimit-Remaining': String(validation.remainingRequests! - 1),
           'X-API-Key-Plan': keyData.plan,
         },
@@ -206,7 +223,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -227,5 +244,5 @@ export async function GET() {
     },
     documentation: 'https://leaflens-six.vercel.app/api-docs',
     getApiKey: 'https://leaflens-six.vercel.app/api-keys',
-  });
+  }, { headers: corsHeaders });
 }
