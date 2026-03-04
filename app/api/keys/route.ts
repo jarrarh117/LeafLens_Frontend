@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createApiKey, getUserApiKeys, deactivateApiKey } from '@/lib/apiKeys';
+import { generateApiKey, hashApiKey, PLAN_LIMITS } from '@/lib/apiKeys';
 import * as admin from 'firebase-admin';
+import crypto from 'crypto';
 
 // Initialize Firebase Admin (if not already initialized)
 if (!admin.apps.length) {
@@ -32,6 +33,8 @@ if (!admin.apps.length) {
     throw error;
   }
 }
+
+const db = admin.firestore();
 
 // ── Helper: Verify Firebase ID Token ─────────────────────────────────────────
 async function verifyUser(request: NextRequest): Promise<{ uid: string; email: string } | null> {
@@ -69,22 +72,27 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const keys = await getUserApiKeys(user.uid);
-    
-    // Format for frontend
-    const formattedKeys = keys.map(key => ({
-      id: key.id,
-      name: key.name,
-      maskedKey: `pd_live_${'•'.repeat(32)}`,
-      plan: key.plan,
-      usageCount: key.usageCount,
-      usageLimit: key.usageLimit,
-      createdAt: key.createdAt,
-      lastUsedAt: key.lastUsedAt,
-      isActive: key.isActive,
-    }));
+    // Get keys from Firestore using Admin SDK
+    const keysSnapshot = await db.collection('api_keys')
+      .where('ownerId', '==', user.uid)
+      .get();
 
-    return NextResponse.json(formattedKeys);
+    const keys = keysSnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        name: data.name,
+        maskedKey: `pd_live_${'•'.repeat(32)}`,
+        plan: data.plan,
+        usageCount: data.usageCount,
+        usageLimit: data.usageLimit,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        lastUsedAt: data.lastUsedAt?.toDate(),
+        isActive: data.isActive,
+      };
+    });
+
+    return NextResponse.json(keys);
   } catch (error) {
     console.error('GET /api/keys error:', error);
     return NextResponse.json(
@@ -126,19 +134,29 @@ export async function POST(request: NextRequest) {
 
     console.log('POST /api/keys - Creating key for user:', user.uid, 'name:', name);
 
-    // Create the API key
-    const { plainKey, keyId } = await createApiKey(
-      user.uid,
-      user.email,
+    // Generate API key using utility functions
+    const plainKey = generateApiKey();
+    const hashedKey = hashApiKey(plainKey);
+    
+    const keyData = {
+      hashedKey,
+      ownerId: user.uid,
+      ownerEmail: user.email,
       name,
-      plan
-    );
+      isActive: true,
+      plan,
+      usageCount: 0,
+      usageLimit: PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS].requestsPerMonth,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastUsedAt: null,
+      expiresAt: null,
+    };
+
+    // Create document using Admin SDK
+    const keyRef = await db.collection('api_keys').add(keyData);
+    const keyId = keyRef.id;
 
     console.log('POST /api/keys - Key created:', keyId);
-
-    // Get the created key data
-    const keys = await getUserApiKeys(user.uid);
-    const newKey = keys.find(k => k.id === keyId);
 
     return NextResponse.json({
       plainKey, // Return plain key ONCE
@@ -147,10 +165,10 @@ export async function POST(request: NextRequest) {
         name,
         key: plainKey, // Include in response for immediate display
         maskedKey: `pd_live_${'•'.repeat(32)}`,
-        plan: newKey?.plan || plan,
+        plan,
         usageCount: 0,
-        usageLimit: newKey?.usageLimit || 100,
-        createdAt: newKey?.createdAt || new Date(),
+        usageLimit: PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS].requestsPerMonth,
+        createdAt: new Date(),
         isActive: true,
       },
     });
@@ -188,19 +206,30 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Verify the key belongs to the user
-    const keys = await getUserApiKeys(user.uid);
-    const keyToDelete = keys.find(k => k.id === keyId);
+    // Get the key document
+    const keyDoc = await db.collection('api_keys').doc(keyId).get();
 
-    if (!keyToDelete) {
+    if (!keyDoc.exists) {
       return NextResponse.json(
         { error: 'API key not found' },
         { status: 404 }
       );
     }
 
-    // Deactivate the key
-    await deactivateApiKey(keyId);
+    const keyData = keyDoc.data();
+
+    // Verify the key belongs to the user
+    if (keyData?.ownerId !== user.uid) {
+      return NextResponse.json(
+        { error: 'API key not found' },
+        { status: 404 }
+      );
+    }
+
+    // Deactivate the key using Admin SDK
+    await db.collection('api_keys').doc(keyId).update({
+      isActive: false,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
