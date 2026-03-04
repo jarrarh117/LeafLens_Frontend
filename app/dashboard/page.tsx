@@ -156,18 +156,24 @@ export default function DashboardPage() {
   const [loadingStats, setLoadingStats] = useState(true);
   const [showCamera, setShowCamera] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // Ensure component is mounted (client-side only)
   useEffect(() => {
-    if (!loading && !user) {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!loading && !user && isMounted) {
       router.push('/login');
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isMounted]);
 
-  // Show loader while auth is initializing
-  if (loading || !user) {
+  // Show loader while auth is initializing or not mounted
+  if (loading || !user || !isMounted) {
     return <LeafLoader />;
   }
 
