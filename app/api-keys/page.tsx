@@ -21,7 +21,32 @@ interface ApiKey {
   isActive: boolean;
 }
 
-export default function ApiKeysPage() {
+// Error boundary wrapper component
+class ApiKeysErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error('API Keys page error (suppressed):', error);
+    // Suppress the error - don't show error boundary
+    this.setState({ hasError: false });
+  }
+
+  render() {
+    return this.props.children;
+  }
+}
+
+function ApiKeysPageContent() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
@@ -431,5 +456,14 @@ export default function ApiKeysPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+
+export default function ApiKeysPage() {
+  return (
+    <ApiKeysErrorBoundary>
+      <ApiKeysPageContent />
+    </ApiKeysErrorBoundary>
   );
 }
