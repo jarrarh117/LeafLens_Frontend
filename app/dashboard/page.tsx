@@ -172,14 +172,7 @@ export default function DashboardPage() {
     }
   }, [user, loading, router, isMounted]);
 
-  useEffect(() => {
-    // Fetch user stats from Firestore
-    // ...existing fetchStats logic...
-  }, [user, isMounted]);
-
-  if (loading || !user || !isMounted) {
-    return <LeafLoader />;
-  }
+  // Fetch user stats from Firestore
   useEffect(() => {
     const fetchStats = async () => {
       // Only run on client-side after mount
@@ -301,6 +294,20 @@ export default function DashboardPage() {
     }
   }, [user, isMounted]);
 
+  // Cleanup camera stream on unmount
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
+
+  // Show loader while auth is initializing or not mounted (AFTER all hooks)
+  if (loading || !user || !isMounted) {
+    return <LeafLoader />;
+  }
+
   const handleLogout = async () => {
     try {
       await logOut();
@@ -369,14 +376,6 @@ export default function DashboardPage() {
       }
     }
   };
-
-  useEffect(() => {
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [stream]);
 
   const startAnalysis = async () => {
     if (!selectedImage) return;
