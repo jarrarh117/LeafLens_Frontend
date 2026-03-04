@@ -32,12 +32,18 @@ export default function ApiKeysPage() {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [loadingKeys, setLoadingKeys] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Ensure component is mounted (client-side only)
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && isMounted) {
       router.push('/login');
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isMounted]);
 
   // Load API keys
   useEffect(() => {
@@ -150,7 +156,7 @@ export default function ApiKeysPage() {
     return key.substring(0, 12) + '•'.repeat(20) + key.substring(key.length - 4);
   };
 
-  if (loading || !user) {
+  if (loading || !user || !isMounted) {
     return <LeafLoader />;
   }
 
