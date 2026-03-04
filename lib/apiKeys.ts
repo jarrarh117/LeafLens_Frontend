@@ -296,7 +296,8 @@ export function checkRateLimit(keyId: string, plan: 'free' | 'premium' | 'enterp
  */
 export function cleanupRateLimitCache(): void {
   const now = Date.now();
-  for (const [keyId, entry] of rateLimitCache.entries()) {
+  const entries = Array.from(rateLimitCache.entries());
+  for (const [keyId, entry] of entries) {
     if (now > entry.resetAt) {
       rateLimitCache.delete(keyId);
     }
