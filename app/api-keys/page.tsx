@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import LeafLoader from '@/components/LeafLoader';
 
 interface ApiKey {
   id: string;
@@ -150,14 +151,7 @@ export default function ApiKeysPage() {
   };
 
   if (loading || !user) {
-    return (
-      <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-          <p className="mt-4 text-stone-600 dark:text-stone-400">Loading...</p>
-        </div>
-      </div>
-    );
+    return <LeafLoader />;
   }
 
   return (
@@ -211,9 +205,8 @@ export default function ApiKeysPage() {
 
         {/* API Keys List */}
         {loadingKeys ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-            <p className="mt-4 text-stone-500 dark:text-stone-400">Loading your API keys...</p>
+          <div className="flex items-center justify-center py-12">
+            <LeafLoader />
           </div>
         ) : apiKeys.length === 0 ? (
           <div className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 p-12 text-center">
