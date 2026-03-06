@@ -225,10 +225,8 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Deactivate the key using Admin SDK
-    await db.collection('api_keys').doc(keyId).update({
-      isActive: false,
-    });
+    // Delete the key using Admin SDK (permanent deletion)
+    await db.collection('api_keys').doc(keyId).delete();
 
     return NextResponse.json({ success: true });
   } catch (error) {
